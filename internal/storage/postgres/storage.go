@@ -18,7 +18,7 @@ type Storage struct {
 func (s *Storage) Create(ctx context.Context, song models.Song) (int, error) {
 	logger.LogUse(ctx).Debug("Storage.Postgres.Create", "input", song.AsLogValue())
 
-	query := fmt.Sprintf("INSERT INTO %s (song, group, text, link, date) VALUES (@song, @group, @text, @link, @date) RETURNING id", table)
+	query := fmt.Sprintf("INSERT INTO %s (song, group_name, text, link, date) VALUES (@song, @group, @text, @link, @date) RETURNING id", table)
 	args := pgx.NamedArgs{
 		"song":  song.Song,
 		"group": song.Group,
@@ -41,7 +41,7 @@ func (s *Storage) Create(ctx context.Context, song models.Song) (int, error) {
 func (s *Storage) Update(ctx context.Context, song models.Song) (bool, error) {
 	logger.LogUse(ctx).Debug("Storage.Postgres.Update", "input", song.AsLogValue())
 
-	query := fmt.Sprintf("UPDATE %s SET song=@song, group=@group, text=@text, link=@link, date=@date WHERE id=@id", table)
+	query := fmt.Sprintf("UPDATE %s SET song=@song, group_name=@group, text=@text, link=@link, date=@date WHERE id=@id", table)
 	args := pgx.NamedArgs{
 		"song":  song.Song,
 		"group": song.Group,
@@ -137,7 +137,7 @@ func generateQuery(filter models.Song, limit int, offset int) (string, pgx.Named
 	}
 
 	if filter.Group != "" {
-		queryArgs = append(queryArgs, "group=@group")
+		queryArgs = append(queryArgs, "group_name=@group")
 		args["group"] = filter.Group
 	}
 

@@ -3,11 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
-	"os"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/s3nn1k/ef-mob-task/internal/client"
 	"github.com/s3nn1k/ef-mob-task/internal/config"
@@ -38,8 +39,12 @@ func (a *App) Stop() error {
 	return nil
 }
 
-// Add migrations
+// New creates new instance of application, sets the dependencies and applies migrations
 func New(cfg *config.Config) (*App, error) {
+	log := logger.NewTextLogger(cfg.Level)
+
+	log.Info("Created logger", slog.String("level", cfg.Level))
+
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", cfg.DB.User, cfg.DB.Pass, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
 
 	db, err := postgres.ConnectDB(connStr)
@@ -47,28 +52,32 @@ func New(cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
-	schemaPath := "./schema/schema.sql"
-
-	err = initTables(schemaPath, db)
+	m, err := migrate.New("file:///migrations", connStr)
 	if err != nil {
 		return nil, err
 	}
+
+	if err = m.Up(); err != nil {
+		return nil, err
+	}
+
+	log.Info("Connected to database and applied migrations", "config", cfg.DB.AsLogValue())
 
 	strg := postgres.NewStorage(db)
 
 	clnt := client.New(cfg.API.Host, cfg.API.Port)
 
+	log.Info("Setup API client", "config", cfg.API.AsLogValue())
+
 	srvc := service.New(strg, clnt)
 
-	logger := logger.NewTextLogger(cfg.Level)
+	hndlr := delivery.NewHandler(log, srvc)
 
-	hndlr := delivery.NewHandler(logger, srvc)
-
-	r := initRoutes(hndlr, logger)
+	r := initRoutes(hndlr, log)
 
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
 
-	return &App{
+	app := &App{
 		db: db,
 		server: &http.Server{
 			Addr:           addr,
@@ -78,7 +87,11 @@ func New(cfg *config.Config) (*App, error) {
 			ReadTimeout:    cfg.Server.Timeout,
 			IdleTimeout:    cfg.Server.IdleTimeout,
 		},
-	}, nil
+	}
+
+	log.Info("Created app with server", "config", cfg.Server.AsLogValue())
+
+	return app, nil
 }
 
 func initRoutes(h *delivery.Handler, log *slog.Logger) *http.ServeMux {
@@ -89,26 +102,11 @@ func initRoutes(h *delivery.Handler, log *slog.Logger) *http.ServeMux {
 	router.Handle("GET /songs/", middleware.WithLogging(log, http.HandlerFunc(h.Get)))
 	router.Handle("DELETE /songs/", middleware.WithLogging(log, http.HandlerFunc(h.Delete)))
 
+	log.Info("Available routes", slog.Group("route",
+		slog.String("Create", "POST /songs/"),
+		slog.String("Update", "PUT /songs/"),
+		slog.String("Get", "GET /songs/"),
+		slog.String("Delete", "DELETE /songs/")))
+
 	return router
-}
-
-func initTables(schemaPath string, db *pgxpool.Pool) error {
-	schemaFile, err := os.Open(schemaPath)
-	if err != nil {
-		return err
-	}
-
-	defer schemaFile.Close()
-
-	data, err := io.ReadAll(schemaFile)
-	if err != nil {
-		return err
-	}
-
-	_, err = db.Exec(context.Background(), string(data))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

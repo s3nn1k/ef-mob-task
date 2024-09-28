@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"os"
 	"time"
 )
@@ -34,6 +35,38 @@ type Server struct {
 	Port        string
 	Timeout     time.Duration
 	IdleTimeout time.Duration
+}
+
+// AsLogValue represents DB struct as slog.Value
+// Used for logging
+func (db *DB) AsLogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("host", db.Host),
+		slog.String("port", db.Port),
+		slog.String("user", db.User),
+		slog.String("pass", "[hidden]"),
+		slog.String("name", db.Name),
+	)
+}
+
+// AsLogValue represents API struct as slog.Value
+// Used for logging
+func (a *API) AsLogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("host", a.Host),
+		slog.String("port", a.Port),
+	)
+}
+
+// AsLogValue represents Server struct as slog.Value
+// Used for logging
+func (s *Server) AsLogValue() slog.Value {
+	return slog.GroupValue(
+		slog.String("host", s.Host),
+		slog.String("port", s.Port),
+		slog.Duration("timeout", s.Timeout),
+		slog.Duration("idleTimeout", s.IdleTimeout),
+	)
 }
 
 // LoadFromEnv loads config var's from environment
