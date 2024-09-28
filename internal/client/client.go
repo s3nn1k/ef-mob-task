@@ -65,7 +65,7 @@ func (c *Client) GetDetail(ctx context.Context, song string, group string) (mode
 
 	resp.Body.Close()
 
-	logger.LogUse(ctx).Debug("Result", "song", res.AsLogValue())
+	logger.LogUse(ctx).Debug("Result", slog.Any("song", res.AsLogValue()))
 
 	return res, nil
 }

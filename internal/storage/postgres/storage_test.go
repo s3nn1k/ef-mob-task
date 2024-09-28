@@ -138,7 +138,7 @@ func TestGet(t *testing.T) {
 	}
 
 	if len(songs) != 1 {
-		t.Fatal("error: result of updating must be true")
+		t.Fatal("error: must get same songs as in storage")
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

@@ -2,17 +2,19 @@ package service
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/s3nn1k/ef-mob-task/internal/client"
 	"github.com/s3nn1k/ef-mob-task/internal/models"
 	"github.com/s3nn1k/ef-mob-task/internal/storage"
+	"github.com/s3nn1k/ef-mob-task/pkg/logger"
 )
 
 // go run github.com/vektra/mockery/v2@v2.45.0 --name=Service
 type ServiceIface interface {
 	Create(ctx context.Context, song string, group string) (models.Song, error)
 	Update(ctx context.Context, song models.Song) (bool, error)
-	Get(ctx context.Context, filter models.Song, limit int, offset int) ([]models.Song, error)
+	Get(ctx context.Context, filter models.Song, filters models.Filters) ([]models.Song, error)
 	Delete(ctx context.Context, id int) (bool, error)
 }
 
@@ -48,8 +50,21 @@ func (s *Service) Update(ctx context.Context, song models.Song) (bool, error) {
 	return s.storage.Update(ctx, song)
 }
 
-func (s *Service) Get(ctx context.Context, filter models.Song, limit int, offset int) ([]models.Song, error) {
-	return s.storage.Get(ctx, filter, limit, offset)
+func (s *Service) Get(ctx context.Context, filter models.Song, filters models.Filters) ([]models.Song, error) {
+	logger.LogUse(ctx).Debug("Service.Get", "filters", filters.AsLogValue())
+
+	songs, err := s.storage.Get(ctx, filter, filters.Limit, filters.Offset)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.LogUse(ctx).Debug("Filter song's text by verse", "input", songs)
+	for _, song := range songs {
+		song.GetVerse(filters.Verse)
+	}
+	logger.LogUse(ctx).Debug("Result", slog.Any("songs", songs))
+
+	return songs, nil
 }
 
 func (s *Service) Delete(ctx context.Context, id int) (bool, error) {

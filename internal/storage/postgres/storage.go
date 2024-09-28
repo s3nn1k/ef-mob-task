@@ -102,6 +102,7 @@ func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset
 	}
 
 	var songs []models.Song
+	var logValues []slog.Value
 	for rows.Next() {
 		var song models.Song
 
@@ -111,9 +112,10 @@ func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset
 		}
 
 		songs = append(songs, song)
+		logValues = append(logValues, song.AsLogValue())
 	}
 
-	logger.LogUse(ctx).Debug("Result", slog.Any("songs", songs))
+	logger.LogUse(ctx).Debug("Result", slog.Any("songs", logValues))
 
 	return songs, nil
 }
