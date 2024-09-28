@@ -105,7 +105,7 @@ func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset
 	for rows.Next() {
 		var song models.Song
 
-		err := rows.Scan(&song.Song, &song.Group, &song.Text, &song.Link, &song.Date)
+		err := rows.Scan(&song.Id, &song.Song, &song.Group, &song.Text, &song.Link, &song.Date)
 		if err != nil {
 			return nil, fmt.Errorf("can't get songs from storage: %w", err)
 		}
@@ -120,7 +120,7 @@ func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset
 
 // generateQuery generates sql query and []args use given arguments
 func generateQuery(filter models.Song, limit int, offset int) (string, pgx.NamedArgs) {
-	query := fmt.Sprintf("SELECT song, group, text, link, date FROM %s", table)
+	query := fmt.Sprintf("SELECT id, song, group, text, link, date FROM %s", table)
 	var queryArgs []string
 	args := pgx.NamedArgs{}
 
