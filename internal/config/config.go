@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	Level string
+	Level      string
+	UseTestApi bool
 
 	DB     DB
 	API    API
@@ -88,6 +89,13 @@ func LoadFromEnv() (*Config, error) {
 			Host: os.Getenv("SERVER_HOST"),
 			Port: os.Getenv("SERVER_PORT"),
 		},
+	}
+
+	use := os.Getenv("USE_TEST_SERVER")
+	if use == "true" {
+		cfg.UseTestApi = true
+	} else {
+		cfg.UseTestApi = false
 	}
 
 	timeout, err := time.ParseDuration(os.Getenv("SERVER_TIMEOUT"))

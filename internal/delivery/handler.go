@@ -25,15 +25,14 @@ func NewHandler(l *slog.Logger, s service.ServiceIface) *Handler {
 func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	var song models.Song
 
-	err := json.NewDecoder(r.Body).Decode(&song)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&song); err != nil {
 		h.response(w, Error("Can't decode json body"), http.StatusBadRequest)
 		return
 	}
 
 	ctx := logger.NewCtxWithLog(r.Context(), h.log)
 
-	song, err = h.service.Create(ctx, song.Song, song.Group)
+	song, err := h.service.Create(ctx, song.Song, song.Group)
 	if err != nil {
 		h.log.Error(err.Error(), "input", song.AsLogValue())
 
@@ -44,29 +43,19 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 	h.response(w, Ok([]models.Song{song}), http.StatusOK)
 }
 
-func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
-	var filters models.Filters
-	err := filters.SetQueryData(r)
-	if err != nil {
-		h.response(w, Error("verse, limit and offset must be int"), http.StatusBadRequest)
-		return
-	}
+func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
+	var filters models.AllFilters
 
-	var filter models.Song
-	filter.SetQueryText(r)
-	err = filter.SetQueryId(r)
-	if err != nil {
-		h.response(w, Error("id must be int"), http.StatusBadRequest)
+	if err := filters.SetQueryData(r); err != nil {
+		h.response(w, Error("limit and offset must be int"), http.StatusBadRequest)
 		return
 	}
 
 	ctx := logger.NewCtxWithLog(r.Context(), h.log)
 
-	songs, err := h.service.Get(ctx, filter, filters)
+	songs, err := h.service.GetAll(ctx, filters)
 	if err != nil {
-		h.log.Error(err.Error(), "input",
-			slog.Any("filter", filter.AsLogValue()),
-			slog.Any("filters", filters.AsLogValue()))
+		h.log.Error(err.Error(), "input", slog.Any("filters", filters.AsLogValue()))
 
 		h.response(w, Error("Can't get songs"), http.StatusInternalServerError)
 		return
@@ -75,18 +64,39 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	h.response(w, Ok(songs), http.StatusOK)
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
-	var song models.Song
+func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
+	var filters models.SongFilters
 
-	err := json.NewDecoder(r.Body).Decode(&song)
-	if err != nil {
-		h.response(w, Error("Can't decode json body"), http.StatusBadRequest)
+	h.log.Debug("req id", "id", r.PathValue("id"))
+
+	if err := filters.SetQueryId(r); err != nil {
+		h.response(w, Error("id must be int"), http.StatusBadRequest)
 		return
 	}
 
-	err = song.SetQueryId(r)
+	if err := filters.SetQueryVerse(r); err != nil {
+		h.response(w, Error("verse must be int"), http.StatusBadRequest)
+		return
+	}
+
+	ctx := logger.NewCtxWithLog(r.Context(), h.log)
+
+	song, err := h.service.GetById(ctx, filters)
 	if err != nil {
-		h.response(w, Error("id must be int"), http.StatusBadRequest)
+		h.log.Error(err.Error(), "input", slog.Any("filters", filters.AsLogValue()))
+
+		h.response(w, Error("Can't get song"), http.StatusInternalServerError)
+		return
+	}
+
+	h.response(w, Ok([]models.Song{song}), http.StatusOK)
+}
+
+func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
+	var song models.Song
+
+	if err := json.NewDecoder(r.Body).Decode(&song); err != nil {
+		h.response(w, Error("Can't decode json body"), http.StatusBadRequest)
 		return
 	}
 
@@ -109,18 +119,18 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
-	var song models.Song
-	err := song.SetQueryId(r)
-	if err != nil {
+	var filters models.SongFilters
+
+	if err := filters.SetQueryId(r); err != nil {
 		h.response(w, Error("id must be int"), http.StatusBadRequest)
 		return
 	}
 
 	ctx := logger.NewCtxWithLog(r.Context(), h.log)
 
-	ok, err := h.service.Delete(ctx, song.Id)
+	ok, err := h.service.Delete(ctx, filters.Id)
 	if err != nil {
-		h.log.Error(err.Error(), "input", song.AsLogValue())
+		h.log.Error(err.Error(), "input", filters.AsLogValue())
 
 		h.response(w, Error("Can't delete song"), http.StatusInternalServerError)
 		return

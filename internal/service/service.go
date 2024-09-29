@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"log/slog"
 
 	"github.com/s3nn1k/ef-mob-task/internal/client"
 	"github.com/s3nn1k/ef-mob-task/internal/models"
@@ -14,7 +13,8 @@ import (
 type ServiceIface interface {
 	Create(ctx context.Context, song string, group string) (models.Song, error)
 	Update(ctx context.Context, song models.Song) (bool, error)
-	Get(ctx context.Context, filter models.Song, filters models.Filters) ([]models.Song, error)
+	GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error)
+	GetById(ctx context.Context, filters models.SongFilters) (models.Song, error)
 	Delete(ctx context.Context, id int) (bool, error)
 }
 
@@ -46,27 +46,27 @@ func (s *Service) Create(ctx context.Context, song string, group string) (models
 	return res, nil
 }
 
-func (s *Service) Get(ctx context.Context, filter models.Song, filters models.Filters) ([]models.Song, error) {
-	logger.LogUse(ctx).Debug("Service.Get", "filters", filters.AsLogValue())
+func (s *Service) GetById(ctx context.Context, filters models.SongFilters) (models.Song, error) {
+	logger.LogUse(ctx).Debug("Service.GetById", "filters", filters.AsLogValue())
 
-	songs, err := s.storage.Get(ctx, filter, filters.Limit, filters.Offset)
+	song, err := s.storage.GetById(ctx, filters.Id)
 	if err != nil {
-		return nil, err
+		return models.Song{}, err
 	}
 
 	if filters.Verse > 0 {
-		logger.LogUse(ctx).Debug("Filter song's text by verse", "input", songs)
+		logger.LogUse(ctx).Debug("Filter song's text by verse", "input", song.AsLogValue())
 
-		for index, song := range songs {
-			song.Text = song.GetVerse(filters.Verse)
+		song.Text = song.GetVerse(filters.Verse)
 
-			songs[index] = song
-		}
-
-		logger.LogUse(ctx).Debug("Result", slog.Any("songs", songs))
+		logger.LogUse(ctx).Debug("Result", "song", song.AsLogValue())
 	}
 
-	return songs, nil
+	return song, nil
+}
+
+func (s *Service) GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error) {
+	return s.storage.GetAll(ctx, filters)
 }
 
 func (s *Service) Update(ctx context.Context, song models.Song) (bool, error) {

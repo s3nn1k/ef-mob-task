@@ -33,9 +33,11 @@ func main() {
 
 	dummy := dummy.New(cfg.API)
 
-	go func() {
-		_ = dummy.Run()
-	}()
+	if cfg.UseTestApi {
+		go func() {
+			_ = dummy.Run()
+		}()
+	}
 
 	go func() {
 		if err := app.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -52,5 +54,7 @@ func main() {
 		log.Println(err)
 	}
 
-	_ = dummy.Stop()
+	if cfg.UseTestApi {
+		_ = dummy.Stop()
+	}
 }

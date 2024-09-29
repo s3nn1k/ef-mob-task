@@ -70,29 +70,57 @@ func (_m *ServiceIface) Delete(ctx context.Context, id int) (bool, error) {
 	return r0, r1
 }
 
-// Get provides a mock function with given fields: ctx, filter, filters
-func (_m *ServiceIface) Get(ctx context.Context, filter models.Song, filters models.Filters) ([]models.Song, error) {
-	ret := _m.Called(ctx, filter, filters)
+// GetAll provides a mock function with given fields: ctx, filters
+func (_m *ServiceIface) GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error) {
+	ret := _m.Called(ctx, filters)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Get")
+		panic("no return value specified for GetAll")
 	}
 
 	var r0 []models.Song
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, models.Song, models.Filters) ([]models.Song, error)); ok {
-		return rf(ctx, filter, filters)
+	if rf, ok := ret.Get(0).(func(context.Context, models.AllFilters) ([]models.Song, error)); ok {
+		return rf(ctx, filters)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, models.Song, models.Filters) []models.Song); ok {
-		r0 = rf(ctx, filter, filters)
+	if rf, ok := ret.Get(0).(func(context.Context, models.AllFilters) []models.Song); ok {
+		r0 = rf(ctx, filters)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]models.Song)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, models.Song, models.Filters) error); ok {
-		r1 = rf(ctx, filter, filters)
+	if rf, ok := ret.Get(1).(func(context.Context, models.AllFilters) error); ok {
+		r1 = rf(ctx, filters)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetById provides a mock function with given fields: ctx, filters
+func (_m *ServiceIface) GetById(ctx context.Context, filters models.SongFilters) (models.Song, error) {
+	ret := _m.Called(ctx, filters)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetById")
+	}
+
+	var r0 models.Song
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, models.SongFilters) (models.Song, error)); ok {
+		return rf(ctx, filters)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, models.SongFilters) models.Song); ok {
+		r0 = rf(ctx, filters)
+	} else {
+		r0 = ret.Get(0).(models.Song)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, models.SongFilters) error); ok {
+		r1 = rf(ctx, filters)
 	} else {
 		r1 = ret.Error(1)
 	}

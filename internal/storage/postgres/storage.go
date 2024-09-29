@@ -67,6 +67,28 @@ func (s *Storage) Update(ctx context.Context, song models.Song) (bool, error) {
 
 }
 
+func (s *Storage) GetById(ctx context.Context, id int) (models.Song, error) {
+	logger.LogUse(ctx).Debug("Storage.Postgres.GetById", "input", id)
+
+	query := fmt.Sprintf("SELECT song, group_name, text, link, date FROM %s WHERE id=@id", table)
+	args := pgx.NamedArgs{
+		"id": id,
+	}
+
+	song := models.Song{
+		Id: id,
+	}
+
+	err := s.db.QueryRow(ctx, query, args).Scan(&song.Song, &song.Group, &song.Text, &song.Link, &song.Date)
+	if err != nil {
+		return models.Song{}, fmt.Errorf("can't create song in storage: %w", err)
+	}
+
+	logger.LogUse(ctx).Debug("Result", "song", song.AsLogValue())
+
+	return song, nil
+}
+
 func (s *Storage) Delete(ctx context.Context, id int) (bool, error) {
 	logger.LogUse(ctx).Debug("Storage.Postgres.Delete", "input", slog.Int("id", id))
 
@@ -90,10 +112,10 @@ func (s *Storage) Delete(ctx context.Context, id int) (bool, error) {
 	return res, nil
 }
 
-func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset int) ([]models.Song, error) {
-	logger.LogUse(ctx).Debug("Storage.Postgres.Get", "input", filter.AsLogValue())
+func (s *Storage) GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error) {
+	logger.LogUse(ctx).Debug("Storage.Postgres.GetAll", "input", filters.AsLogValue())
 
-	query, args := generateQuery(filter, limit, offset)
+	query, args := generateQuery(filters)
 	logger.LogUse(ctx).Debug("Generated", slog.Any("query", query), slog.Any("args", args))
 
 	rows, err := s.db.Query(ctx, query, args)
@@ -121,39 +143,24 @@ func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset
 }
 
 // generateQuery generates sql query and []args use given arguments
-func generateQuery(filter models.Song, limit int, offset int) (string, pgx.NamedArgs) {
+func generateQuery(filters models.AllFilters) (string, pgx.NamedArgs) {
 	query := fmt.Sprintf("SELECT id, song, group_name, text, link, date FROM %s", table)
 	var queryArgs []string
 	args := pgx.NamedArgs{}
 
-	if filter.Id != 0 {
-		queryArgs = append(queryArgs, "id=@id")
-		args["id"] = filter.Id
-	}
-
-	if filter.Song != "" {
+	if filters.Song != "" {
 		queryArgs = append(queryArgs, "song=@song")
-		args["song"] = filter.Song
+		args["song"] = filters.Song
 	}
 
-	if filter.Group != "" {
+	if filters.Group != "" {
 		queryArgs = append(queryArgs, "group_name=@group")
-		args["group"] = filter.Group
+		args["group"] = filters.Group
 	}
 
-	if filter.Text != "" {
-		queryArgs = append(queryArgs, "text=@text")
-		args["text"] = filter.Text
-	}
-
-	if filter.Link != "" {
-		queryArgs = append(queryArgs, "link=@link")
-		args["link"] = filter.Link
-	}
-
-	if filter.Date != "" {
+	if filters.Date != "" {
 		queryArgs = append(queryArgs, "date=@date")
-		args["date"] = filter.Date
+		args["date"] = filters.Date
 	}
 
 	if len(args) > 0 && len(queryArgs) > 0 {
@@ -163,10 +170,10 @@ func generateQuery(filter models.Song, limit int, offset int) (string, pgx.Named
 	}
 
 	query += " LIMIT @limit"
-	args["limit"] = limit
+	args["limit"] = filters.Limit
 
 	query += " OFFSET @offset"
-	args["offset"] = offset
+	args["offset"] = filters.Offset
 
 	return query, args
 }

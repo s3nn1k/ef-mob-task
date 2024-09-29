@@ -39,7 +39,6 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			Name:       "wrongBody",
-			Body:       ``,
 			WantStatus: 400,
 			WantRes:    `{"status":"Error","error":"Can't decode json body"}`,
 		},
@@ -47,18 +46,22 @@ func TestCreate(t *testing.T) {
 
 	handler := NewHandler(log, mock)
 
+	router := http.NewServeMux()
+
+	router.HandleFunc("POST /songs", http.HandlerFunc(handler.Create))
+
 	for _, testCase := range testCases {
 		testCase.Url = "/songs"
 		testCase.Method = "POST"
 
-		test.TestEndpoint(t, http.HandlerFunc(handler.Create), testCase)
+		test.TestEndpoint(t, router, testCase)
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestGetAll(t *testing.T) {
 	mock := mocks.NewServiceIface(t)
 
-	filter := models.Song{
+	song := models.Song{
 		Id:    1,
 		Song:  "TestSong",
 		Group: "TestGroup",
@@ -67,47 +70,100 @@ func TestGet(t *testing.T) {
 		Date:  "TestDate",
 	}
 
-	filters := models.Filters{
-		Verse:  1,
+	filters := models.AllFilters{
 		Limit:  1,
 		Offset: 1,
+		Song:   song.Song,
+		Group:  song.Group,
+		Date:   song.Date,
 	}
 
 	log := logger.NewTextLogger("")
 
-	mock.On("Get", logger.NewCtxWithLog(context.Background(), log), filter, filters).
-		Return([]models.Song{filter}, nil)
+	mock.On("GetAll", logger.NewCtxWithLog(context.Background(), log), filters).
+		Return([]models.Song{song}, nil)
 
 	testCases := []test.TestCase{
 		{
 			Name:       "success",
-			Url:        "/songs?id=1&song=TestSong&group=TestGroup&text=TestText TestText&link=TestLink&date=TestDate&verse=1&limit=1&offset=1",
-			Body:       ``,
+			Url:        "/songs?song=TestSong&group=TestGroup&date=TestDate&limit=1&offset=1",
 			WantStatus: 200,
 			WantRes:    `{"status":"Ok","result":[{"id":1,"song":"TestSong","group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}]}`,
 		},
 		{
 			Name:       "invalid filters",
-			Url:        "/songs?verse=zero&limit=one&offset=two",
-			Body:       ``,
+			Url:        "/songs?limit=one&offset=two",
 			WantStatus: 400,
-			WantRes:    `{"status":"Error","error":"verse, limit and offset must be int"}`,
-		},
-		{
-			Name:       "invalid Id",
-			Url:        "/songs?id=zero",
-			Body:       ``,
-			WantStatus: 400,
-			WantRes:    `{"status":"Error","error":"id must be int"}`,
+			WantRes:    `{"status":"Error","error":"limit and offset must be int"}`,
 		},
 	}
 
 	handler := NewHandler(log, mock)
 
+	router := http.NewServeMux()
+
+	router.HandleFunc("GET /songs", http.HandlerFunc(handler.GetAll))
+
 	for _, testCase := range testCases {
 		testCase.Method = "GET"
 
-		test.TestEndpoint(t, http.HandlerFunc(handler.Get), testCase)
+		test.TestEndpoint(t, router, testCase)
+	}
+}
+
+func TestGetById(t *testing.T) {
+	mock := mocks.NewServiceIface(t)
+
+	song := models.Song{
+		Id:    1,
+		Song:  "TestSong",
+		Group: "TestGroup",
+		Text:  "TestText TestText",
+		Link:  "TestLink",
+		Date:  "TestDate",
+	}
+
+	filters := models.SongFilters{
+		Id:    1,
+		Verse: 1,
+	}
+
+	log := logger.NewTextLogger("")
+
+	mock.On("GetById", logger.NewCtxWithLog(context.Background(), log), filters).
+		Return(song, nil)
+
+	testCases := []test.TestCase{
+		{
+			Name:       "success",
+			Url:        "/songs/1?verse=1",
+			WantStatus: 200,
+			WantRes:    `{"status":"Ok","result":[{"id":1,"song":"TestSong","group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}]}`,
+		},
+		{
+			Name:       "invalid id",
+			Url:        "/songs/kasjdf?verse=1",
+			WantStatus: 400,
+			WantRes:    `{"status":"Error","error":"id must be int"}`,
+		},
+		{
+			Name:       "invalid verse",
+			Url:        "/songs/1?verse=asdf",
+			WantStatus: 400,
+			WantRes:    `{"status":"Error","error":"verse must be int"}`,
+		},
+	}
+
+	handler := NewHandler(log, mock)
+
+	router := http.NewServeMux()
+
+	router.HandleFunc("GET /songs/{id}", http.HandlerFunc(handler.GetById))
+
+	for _, testCase := range testCases {
+		testCase.Method = "GET"
+
+		test.TestEndpoint(t, router, testCase)
 	}
 }
 
@@ -137,21 +193,7 @@ func TestUpdate(t *testing.T) {
 			WantRes:    `{"status":"Ok"}`,
 		},
 		{
-			Name:       "json success",
-			Url:        "/songs?id=1",
-			Body:       `{"song":"TestSong", "group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}`,
-			WantStatus: 200,
-			WantRes:    `{"status":"Ok"}`,
-		},
-		{
 			Name:       "invalid id",
-			Url:        "/songs?id=zero",
-			Body:       `{}`,
-			WantStatus: 400,
-			WantRes:    `{"status":"Error","error":"id must be int"}`,
-		},
-		{
-			Name:       "invalid json id",
 			Url:        "/songs",
 			Body:       `{"id":"zero"}`,
 			WantStatus: 400,
@@ -161,10 +203,14 @@ func TestUpdate(t *testing.T) {
 
 	handler := NewHandler(log, mock)
 
+	router := http.NewServeMux()
+
+	router.HandleFunc("PUT /songs", http.HandlerFunc(handler.Update))
+
 	for _, testCase := range testCases {
 		testCase.Method = "PUT"
 
-		test.TestEndpoint(t, http.HandlerFunc(handler.Update), testCase)
+		test.TestEndpoint(t, router, testCase)
 	}
 }
 
@@ -182,16 +228,20 @@ func TestFailUpdate(t *testing.T) {
 
 	testCase := test.TestCase{
 		Name:       "fail",
-		Url:        "/songs?id=1",
+		Url:        "/songs",
 		Method:     "PUT",
-		Body:       `{}`,
+		Body:       `{"id":1}`,
 		WantStatus: 400,
 		WantRes:    `{"status":"Error","error":"Song not exists"}`,
 	}
 
 	handler := NewHandler(log, mock)
 
-	test.TestEndpoint(t, http.HandlerFunc(handler.Update), testCase)
+	router := http.NewServeMux()
+
+	router.HandleFunc("PUT /songs", http.HandlerFunc(handler.Update))
+
+	test.TestEndpoint(t, router, testCase)
 }
 
 func TestDelete(t *testing.T) {
@@ -207,14 +257,14 @@ func TestDelete(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:       "success",
-			Url:        "/songs?id=1",
+			Url:        "/songs/1",
 			Body:       `{}`,
 			WantStatus: 204,
 			WantRes:    `{"status":"Ok"}`,
 		},
 		{
 			Name:       "invalid id",
-			Url:        "/songs?id=one",
+			Url:        "/songs/ieunf",
 			Body:       `{}`,
 			WantStatus: 400,
 			WantRes:    `{"status":"Error","error":"id must be int"}`,
@@ -223,10 +273,14 @@ func TestDelete(t *testing.T) {
 
 	handler := NewHandler(log, mock)
 
+	router := http.NewServeMux()
+
+	router.HandleFunc("DELETE /songs/{id}", http.HandlerFunc(handler.Delete))
+
 	for _, testCase := range testCases {
 		testCase.Method = "DELETE"
 
-		test.TestEndpoint(t, http.HandlerFunc(handler.Delete), testCase)
+		test.TestEndpoint(t, router, testCase)
 	}
 }
 
@@ -242,7 +296,7 @@ func TestFailDelete(t *testing.T) {
 
 	testCase := test.TestCase{
 		Name:       "fail",
-		Url:        "/songs?id=1",
+		Url:        "/songs/1",
 		Method:     "DELETE",
 		Body:       `{}`,
 		WantStatus: 400,
@@ -251,5 +305,9 @@ func TestFailDelete(t *testing.T) {
 
 	handler := NewHandler(log, mock)
 
-	test.TestEndpoint(t, http.HandlerFunc(handler.Delete), testCase)
+	router := http.NewServeMux()
+
+	router.HandleFunc("DELETE /songs/{id}", http.HandlerFunc(handler.Delete))
+
+	test.TestEndpoint(t, router, testCase)
 }

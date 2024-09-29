@@ -43,7 +43,6 @@ func New(cfg config.API) *Dummy {
 func dummyHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var song models.Song
-		song.SetQueryText(r)
 
 		_ = json.NewDecoder(r.Body).Decode(&song)
 
