@@ -11,6 +11,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/s3nn1k/ef-mob-task/internal/app"
 	"github.com/s3nn1k/ef-mob-task/internal/config"
+	"github.com/s3nn1k/ef-mob-task/internal/dummy"
 )
 
 func init() {
@@ -30,6 +31,12 @@ func main() {
 		log.Fatalf("[ERROR] Can't create app: %s", err.Error())
 	}
 
+	dummy := dummy.New(cfg.API)
+
+	go func() {
+		_ = dummy.Run()
+	}()
+
 	go func() {
 		if err := app.Run(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Println(err)
@@ -44,4 +51,6 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
+
+	_ = dummy.Stop()
 }

@@ -97,16 +97,16 @@ func New(cfg *config.Config) (*App, error) {
 func initRoutes(h *delivery.Handler, log *slog.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 
-	router.Handle("POST /songs/", middleware.WithLogging(log, http.HandlerFunc(h.Create)))
-	router.Handle("PUT /songs/", middleware.WithLogging(log, http.HandlerFunc(h.Update)))
-	router.Handle("GET /songs/", middleware.WithLogging(log, http.HandlerFunc(h.Get)))
-	router.Handle("DELETE /songs/", middleware.WithLogging(log, http.HandlerFunc(h.Delete)))
+	router.Handle("POST /songs", middleware.WithLogging(log, http.HandlerFunc(h.Create)))
+	router.Handle("PUT /songs", middleware.WithLogging(log, http.HandlerFunc(h.Update)))
+	router.Handle("GET /songs", middleware.WithLogging(log, http.HandlerFunc(h.Get)))
+	router.Handle("DELETE /songs", middleware.WithLogging(log, http.HandlerFunc(h.Delete)))
 
 	log.Info("Available routes", slog.Group("route",
-		slog.String("Create", "POST /songs/"),
-		slog.String("Update", "PUT /songs/"),
-		slog.String("Get", "GET /songs/"),
-		slog.String("Delete", "DELETE /songs/")))
+		slog.String("Create", "POST /songs"),
+		slog.String("Update", "PUT /songs"),
+		slog.String("Get", "GET /songs"),
+		slog.String("Delete", "DELETE /songs")))
 
 	return router
 }

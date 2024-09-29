@@ -58,11 +58,17 @@ func (s *Service) Get(ctx context.Context, filter models.Song, filters models.Fi
 		return nil, err
 	}
 
-	logger.LogUse(ctx).Debug("Filter song's text by verse", "input", songs)
-	for _, song := range songs {
-		song.GetVerse(filters.Verse)
+	if filters.Verse > 0 {
+		logger.LogUse(ctx).Debug("Filter song's text by verse", "input", songs)
+
+		for index, song := range songs {
+			song.Text = song.GetVerse(filters.Verse)
+
+			songs[index] = song
+		}
+
+		logger.LogUse(ctx).Debug("Result", slog.Any("songs", songs))
 	}
-	logger.LogUse(ctx).Debug("Result", slog.Any("songs", songs))
 
 	return songs, nil
 }

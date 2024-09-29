@@ -122,7 +122,7 @@ func (s *Storage) Get(ctx context.Context, filter models.Song, limit int, offset
 
 // generateQuery generates sql query and []args use given arguments
 func generateQuery(filter models.Song, limit int, offset int) (string, pgx.NamedArgs) {
-	query := fmt.Sprintf("SELECT id, song, group, text, link, date FROM %s", table)
+	query := fmt.Sprintf("SELECT id, song, group_name, text, link, date FROM %s", table)
 	var queryArgs []string
 	args := pgx.NamedArgs{}
 

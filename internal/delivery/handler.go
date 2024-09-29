@@ -49,12 +49,15 @@ func (h *Handler) Get(w http.ResponseWriter, r *http.Request) {
 	err := filters.SetQueryData(r)
 	if err != nil {
 		h.response(w, Error("verse, limit and offset must be int"), http.StatusBadRequest)
+		return
 	}
 
 	var filter models.Song
-	err = filter.SetQueryData(r)
+	filter.SetQueryText(r)
+	err = filter.SetQueryId(r)
 	if err != nil {
 		h.response(w, Error("id must be int"), http.StatusBadRequest)
+		return
 	}
 
 	ctx := logger.NewCtxWithLog(r.Context(), h.log)
@@ -81,6 +84,12 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = song.SetQueryId(r)
+	if err != nil {
+		h.response(w, Error("id must be int"), http.StatusBadRequest)
+		return
+	}
+
 	ctx := logger.NewCtxWithLog(r.Context(), h.log)
 
 	ok, err := h.service.Update(ctx, song)
@@ -93,6 +102,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		h.response(w, Error("Song not exists"), http.StatusBadRequest)
+		return
 	}
 
 	h.response(w, Ok(nil), http.StatusOK)
@@ -100,9 +110,10 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 	var song models.Song
-	err := song.SetQueryData(r)
+	err := song.SetQueryId(r)
 	if err != nil {
 		h.response(w, Error("id must be int"), http.StatusBadRequest)
+		return
 	}
 
 	ctx := logger.NewCtxWithLog(r.Context(), h.log)
@@ -117,6 +128,7 @@ func (h *Handler) Delete(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 		h.response(w, Error("Song not exists"), http.StatusBadRequest)
+		return
 	}
 
 	h.response(w, Ok(nil), http.StatusNoContent)

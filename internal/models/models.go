@@ -25,53 +25,72 @@ type Filters struct {
 
 // SetQueryData set's data from request url query to Filters struct
 func (f *Filters) SetQueryData(r *http.Request) error {
-	verse, err := strconv.Atoi(r.URL.Query().Get("verse"))
-	if err != nil {
-		return err
+	val := r.URL.Query().Get("verse")
+	if val != "" {
+		verse, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+
+		f.Verse = verse
 	}
 
-	f.Verse = verse
+	val = r.URL.Query().Get("limit")
+	if val != "" {
+		limit, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
 
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		return err
+		f.Limit = limit
 	}
 
-	f.Limit = limit
-
-	offset, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		return err
+	if f.Limit < 1 {
+		f.Limit = 10
 	}
 
-	f.Offset = offset
+	val = r.URL.Query().Get("offset")
+	if val != "" {
+		offset, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+
+		f.Offset = offset
+	}
 
 	return nil
 }
 
-// SetQueryData set's data from request url query to Song struct
-func (s *Song) SetQueryData(r *http.Request) error {
+// SetQueryText set's text data from request url query to Song struct
+func (s *Song) SetQueryText(r *http.Request) {
 	s.Song = r.URL.Query().Get("song")
 	s.Group = r.URL.Query().Get("group")
 	s.Text = r.URL.Query().Get("text")
 	s.Link = r.URL.Query().Get("link")
 	s.Date = r.URL.Query().Get("date")
+}
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-	if err != nil {
-		return err
+// SetQueryId set's id from request url query to struct
+func (s *Song) SetQueryId(r *http.Request) error {
+	val := r.URL.Query().Get("id")
+	if val != "" {
+		id, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+
+		s.Id = id
 	}
-
-	s.Id = id
 
 	return nil
 }
 
 // GetVerse returns verse from text
 func (s *Song) GetVerse(id int) string {
-	verses := strings.Split(s.Text, "/n/n")
+	verses := strings.Split(s.Text, "\n\n")
 
-	if len(verses) > id-1 {
+	if len(verses) > id-1 && id >= 1 {
 		return verses[id-1]
 	}
 
@@ -82,6 +101,7 @@ func (s *Song) GetVerse(id int) string {
 // Used for logging
 func (s *Song) AsLogValue() slog.Value {
 	return slog.GroupValue(
+		slog.Int("id", s.Id),
 		slog.String("song", s.Song),
 		slog.String("group", s.Group),
 		slog.String("text", s.Text),
