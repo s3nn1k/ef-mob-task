@@ -10,8 +10,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/s3nn1k/ef-mob-task/internal/app"
+	"github.com/s3nn1k/ef-mob-task/internal/client/dummy"
 	"github.com/s3nn1k/ef-mob-task/internal/config"
-	"github.com/s3nn1k/ef-mob-task/internal/dummy"
 )
 
 func init() {

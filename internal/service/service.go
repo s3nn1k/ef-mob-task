@@ -10,7 +10,7 @@ import (
 	"github.com/s3nn1k/ef-mob-task/pkg/logger"
 )
 
-// go run github.com/vektra/mockery/v2@v2.45.0 --name=Service
+// go run github.com/vektra/mockery/v2@v2.45.0 --name=ServiceIface
 type ServiceIface interface {
 	Create(ctx context.Context, song string, group string) (models.Song, error)
 	Update(ctx context.Context, song models.Song) (bool, error)
@@ -46,10 +46,6 @@ func (s *Service) Create(ctx context.Context, song string, group string) (models
 	return res, nil
 }
 
-func (s *Service) Update(ctx context.Context, song models.Song) (bool, error) {
-	return s.storage.Update(ctx, song)
-}
-
 func (s *Service) Get(ctx context.Context, filter models.Song, filters models.Filters) ([]models.Song, error) {
 	logger.LogUse(ctx).Debug("Service.Get", "filters", filters.AsLogValue())
 
@@ -71,6 +67,10 @@ func (s *Service) Get(ctx context.Context, filter models.Song, filters models.Fi
 	}
 
 	return songs, nil
+}
+
+func (s *Service) Update(ctx context.Context, song models.Song) (bool, error) {
+	return s.storage.Update(ctx, song)
 }
 
 func (s *Service) Delete(ctx context.Context, id int) (bool, error) {
