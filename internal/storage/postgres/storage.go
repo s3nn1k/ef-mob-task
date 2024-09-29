@@ -81,7 +81,11 @@ func (s *Storage) GetById(ctx context.Context, id int) (models.Song, error) {
 
 	err := s.db.QueryRow(ctx, query, args).Scan(&song.Song, &song.Group, &song.Text, &song.Link, &song.Date)
 	if err != nil {
-		return models.Song{}, fmt.Errorf("can't create song in storage: %w", err)
+		if err != pgx.ErrNoRows {
+			return models.Song{}, fmt.Errorf("can't get song from storage: %w", err)
+		}
+
+		song.Id = 0
 	}
 
 	logger.LogUse(ctx).Debug("Result", "song", song.AsLogValue())

@@ -44,8 +44,8 @@ func dummyHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var song models.Song
 
-		_ = json.NewDecoder(r.Body).Decode(&song)
-
+		song.Song = r.URL.Query().Get("song")
+		song.Group = r.URL.Query().Get("group")
 		song.Text = "first verse\n\nsecond verse\n\nthird verse\n\nfourth verse\n\n"
 		song.Link = "https://www.youtube.com/watch?v=HIcSWuKMwOw"
 		song.Date = time.Now().Format("02.01.2006")

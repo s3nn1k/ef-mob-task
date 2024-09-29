@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/s3nn1k/ef-mob-task/internal/models"
 )
@@ -140,7 +141,7 @@ func TestGetAll(t *testing.T) {
 
 	songs, err := db.GetAll(context.Background(), filters)
 	if err != nil {
-		t.Fatalf("error not expected while updating: %s", err)
+		t.Fatalf("error not expected while get all songs: %s", err)
 	}
 
 	if len(songs) != 1 {
@@ -176,7 +177,7 @@ func TestGetById(t *testing.T) {
 
 	storedSong, err := db.GetById(context.Background(), song.Id)
 	if err != nil {
-		t.Fatalf("error not expected while updating: %s", err)
+		t.Fatalf("error not expected while get song by id: %s", err)
 	}
 
 	if storedSong.Id != song.Id {
@@ -201,6 +202,34 @@ func TestGetById(t *testing.T) {
 
 	if storedSong.Date != song.Date {
 		t.Fatalf("error: returned date must be the same as in storage")
+	}
+
+	if err := mock.ExpectationsWereMet(); err != nil {
+		t.Fatalf("there were unfulfilled expectations: %s", err)
+	}
+}
+
+func TestFailGetById(t *testing.T) {
+	mock, err := pgxmock.NewPool()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	id := 1
+
+	mock.ExpectQuery("^SELECT (.+) FROM songs WHERE (.+)$").
+		WithArgs(id).
+		WillReturnError(pgx.ErrNoRows)
+
+	db := NewStorage(mock)
+
+	storedSong, err := db.GetById(context.Background(), id)
+	if err != nil {
+		t.Fatalf("error: if err is pgx.ErrNoRows err must not be returned: %s", err)
+	}
+
+	if storedSong.Id != 0 {
+		t.Fatalf("error: id must be 0 if song not exists in storage")
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

@@ -91,7 +91,7 @@ func LoadFromEnv() (*Config, error) {
 		},
 	}
 
-	use := os.Getenv("USE_TEST_SERVER")
+	use := os.Getenv("USE_TEST_API")
 	if use == "true" {
 		cfg.UseTestApi = true
 	} else {

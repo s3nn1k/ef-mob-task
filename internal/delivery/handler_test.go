@@ -167,6 +167,35 @@ func TestGetById(t *testing.T) {
 	}
 }
 
+func TestFailGetById(t *testing.T) {
+	mock := mocks.NewServiceIface(t)
+
+	filters := models.SongFilters{
+		Id:    1,
+		Verse: 1,
+	}
+
+	log := logger.NewTextLogger("")
+
+	mock.On("GetById", logger.NewCtxWithLog(context.Background(), log), filters).
+		Return(models.Song{}, nil)
+
+	testCase := test.TestCase{
+		Name:       "fail",
+		Url:        "/songs/1?verse=1",
+		WantStatus: 400,
+		WantRes:    `{"status":"Error","error":"Song not exists"}`,
+	}
+
+	handler := NewHandler(log, mock)
+
+	router := http.NewServeMux()
+
+	router.HandleFunc("GET /songs/{id}", http.HandlerFunc(handler.GetById))
+
+	test.TestEndpoint(t, router, testCase)
+}
+
 func TestUpdate(t *testing.T) {
 	mock := mocks.NewServiceIface(t)
 

@@ -89,6 +89,11 @@ func (h *Handler) GetById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if song.Id == 0 {
+		h.response(w, Error("Song not exists"), http.StatusBadRequest)
+		return
+	}
+
 	h.response(w, Ok([]models.Song{song}), http.StatusOK)
 }
 
