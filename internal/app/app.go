@@ -49,17 +49,17 @@ func New(cfg *config.Config) (*App, error) {
 
 	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%s/%s?sslmode=disable", cfg.DB.User, cfg.DB.Pass, cfg.DB.Host, cfg.DB.Port, cfg.DB.Name)
 
-	db, err := postgres.ConnectDB(connStr)
-	if err != nil {
-		return nil, err
-	}
-
 	m, err := migrate.New("file:///migrations", connStr)
 	if err != nil {
 		return nil, err
 	}
 
 	if err = m.Up(); err != nil {
+		return nil, err
+	}
+
+	db, err := postgres.ConnectDB(connStr)
+	if err != nil {
 		return nil, err
 	}
 
