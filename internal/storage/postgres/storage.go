@@ -67,32 +67,6 @@ func (s *Storage) Update(ctx context.Context, song models.Song) (bool, error) {
 
 }
 
-func (s *Storage) GetById(ctx context.Context, id int) (models.Song, error) {
-	logger.LogUse(ctx).Debug("Storage.Postgres.GetById", "input", id)
-
-	query := fmt.Sprintf("SELECT song, group_name, text, link, date FROM %s WHERE id=@id", table)
-	args := pgx.NamedArgs{
-		"id": id,
-	}
-
-	song := models.Song{
-		Id: id,
-	}
-
-	err := s.db.QueryRow(ctx, query, args).Scan(&song.Song, &song.Group, &song.Text, &song.Link, &song.Date)
-	if err != nil {
-		if err != pgx.ErrNoRows {
-			return models.Song{}, fmt.Errorf("can't get song from storage: %w", err)
-		}
-
-		song.Id = 0
-	}
-
-	logger.LogUse(ctx).Debug("Result", "song", song.AsLogValue())
-
-	return song, nil
-}
-
 func (s *Storage) Delete(ctx context.Context, id int) (bool, error) {
 	logger.LogUse(ctx).Debug("Storage.Postgres.Delete", "input", slog.Int("id", id))
 
@@ -116,7 +90,7 @@ func (s *Storage) Delete(ctx context.Context, id int) (bool, error) {
 	return res, nil
 }
 
-func (s *Storage) GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error) {
+func (s *Storage) GetAll(ctx context.Context, filters models.GetFilters) ([]models.Song, error) {
 	logger.LogUse(ctx).Debug("Storage.Postgres.GetAll", "input", filters.AsLogValue())
 
 	query, args := generateQuery(filters)
@@ -147,10 +121,15 @@ func (s *Storage) GetAll(ctx context.Context, filters models.AllFilters) ([]mode
 }
 
 // generateQuery generates sql query and []args use given arguments
-func generateQuery(filters models.AllFilters) (string, pgx.NamedArgs) {
+func generateQuery(filters models.GetFilters) (string, pgx.NamedArgs) {
 	query := fmt.Sprintf("SELECT id, song, group_name, text, link, date FROM %s", table)
 	var queryArgs []string
 	args := pgx.NamedArgs{}
+
+	if filters.Id != 0 {
+		queryArgs = append(queryArgs, "id=@id")
+		args["id"] = filters.Id
+	}
 
 	if filters.Song != "" {
 		queryArgs = append(queryArgs, "song=@song")

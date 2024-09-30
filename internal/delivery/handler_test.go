@@ -70,9 +70,10 @@ func TestGetAll(t *testing.T) {
 		Date:  "TestDate",
 	}
 
-	filters := models.AllFilters{
+	filters := models.GetFilters{
 		Limit:  1,
 		Offset: 1,
+		Id:     1,
 		Song:   song.Song,
 		Group:  song.Group,
 		Date:   song.Date,
@@ -86,15 +87,15 @@ func TestGetAll(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:       "success",
-			Url:        "/songs?song=TestSong&group=TestGroup&date=TestDate&limit=1&offset=1",
+			Url:        "/songs?id=1&song=TestSong&group=TestGroup&date=TestDate&limit=1&offset=1",
 			WantStatus: 200,
 			WantRes:    `{"status":"Ok","result":[{"id":1,"song":"TestSong","group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}]}`,
 		},
 		{
-			Name:       "invalid filters",
-			Url:        "/songs?limit=one&offset=two",
+			Name:       "invalid limit",
+			Url:        "/songs?limit=one",
 			WantStatus: 400,
-			WantRes:    `{"status":"Error","error":"limit and offset must be int"}`,
+			WantRes:    `{"status":"Error","error":"limit, offset and id must be int"}`,
 		},
 	}
 
@@ -111,46 +112,38 @@ func TestGetAll(t *testing.T) {
 	}
 }
 
-func TestGetById(t *testing.T) {
+func TestGetVerses(t *testing.T) {
 	mock := mocks.NewServiceIface(t)
 
-	song := models.Song{
-		Id:    1,
-		Song:  "TestSong",
-		Group: "TestGroup",
-		Text:  "TestText TestText",
-		Link:  "TestLink",
-		Date:  "TestDate",
-	}
-
-	filters := models.SongFilters{
-		Id:    1,
-		Verse: 1,
+	filters := models.GetVersesFilters{
+		Id:     1,
+		Limit:  1,
+		Offset: 1,
 	}
 
 	log := logger.NewTextLogger("")
 
-	mock.On("GetById", logger.NewCtxWithLog(context.Background(), log), filters).
-		Return(song, nil)
+	mock.On("GetVerses", logger.NewCtxWithLog(context.Background(), log), filters).
+		Return([]string{"TestText", "TextText"}, nil)
 
 	testCases := []test.TestCase{
 		{
 			Name:       "success",
-			Url:        "/songs/1?verse=1",
+			Url:        "/songs/1?limit=1&offset=1",
 			WantStatus: 200,
-			WantRes:    `{"status":"Ok","result":[{"id":1,"song":"TestSong","group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}]}`,
+			WantRes:    `{"status":"Ok","result":["TestText","TextText"]}`,
 		},
 		{
 			Name:       "invalid id",
-			Url:        "/songs/kasjdf?verse=1",
+			Url:        "/songs/kasjdf",
 			WantStatus: 400,
 			WantRes:    `{"status":"Error","error":"id must be int"}`,
 		},
 		{
-			Name:       "invalid verse",
-			Url:        "/songs/1?verse=asdf",
+			Name:       "invalid limit",
+			Url:        "/songs/1?limit=asdf",
 			WantStatus: 400,
-			WantRes:    `{"status":"Error","error":"verse must be int"}`,
+			WantRes:    `{"status":"Error","error":"limit and offset must be int"}`,
 		},
 	}
 
@@ -158,7 +151,7 @@ func TestGetById(t *testing.T) {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /songs/{id}", http.HandlerFunc(handler.GetById))
+	router.HandleFunc("GET /songs/{id}", http.HandlerFunc(handler.GetVerses))
 
 	for _, testCase := range testCases {
 		testCase.Method = "GET"
@@ -167,31 +160,32 @@ func TestGetById(t *testing.T) {
 	}
 }
 
-func TestFailGetById(t *testing.T) {
+func TestFailGetVerses(t *testing.T) {
 	mock := mocks.NewServiceIface(t)
 
-	filters := models.SongFilters{
-		Id:    1,
-		Verse: 1,
+	filters := models.GetVersesFilters{
+		Id:     1,
+		Limit:  1,
+		Offset: 1,
 	}
 
 	log := logger.NewTextLogger("")
 
-	mock.On("GetById", logger.NewCtxWithLog(context.Background(), log), filters).
-		Return(models.Song{}, nil)
+	mock.On("GetVerses", logger.NewCtxWithLog(context.Background(), log), filters).
+		Return(nil, nil)
 
 	testCase := test.TestCase{
 		Name:       "fail",
-		Url:        "/songs/1?verse=1",
-		WantStatus: 400,
-		WantRes:    `{"status":"Error","error":"Song not exists"}`,
+		Url:        "/songs/1?limit=1&offset=1",
+		WantStatus: 404,
+		WantRes:    `{"status":"Error","error":"Empty verses response"}`,
 	}
 
 	handler := NewHandler(log, mock)
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("GET /songs/{id}", http.HandlerFunc(handler.GetById))
+	router.HandleFunc("GET /songs/{id}", http.HandlerFunc(handler.GetVerses))
 
 	test.TestEndpoint(t, router, testCase)
 }
@@ -216,14 +210,21 @@ func TestUpdate(t *testing.T) {
 	testCases := []test.TestCase{
 		{
 			Name:       "success",
-			Url:        "/songs",
-			Body:       `{"id":1,"song":"TestSong", "group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}`,
+			Url:        "/songs/1",
+			Body:       `{"id":0,"song":"TestSong", "group":"TestGroup","text":"TestText TestText","link":"TestLink","releaseDate":"TestDate"}`,
 			WantStatus: 200,
 			WantRes:    `{"status":"Ok"}`,
 		},
 		{
 			Name:       "invalid id",
-			Url:        "/songs",
+			Url:        "/songs/one",
+			Body:       `{}`,
+			WantStatus: 400,
+			WantRes:    `{"status":"Error","error":"id must be int"}`,
+		},
+		{
+			Name:       "invalid json id",
+			Url:        "/songs/1",
 			Body:       `{"id":"zero"}`,
 			WantStatus: 400,
 			WantRes:    `{"status":"Error","error":"Can't decode json body"}`,
@@ -234,7 +235,7 @@ func TestUpdate(t *testing.T) {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("PUT /songs", http.HandlerFunc(handler.Update))
+	router.HandleFunc("PUT /songs/{id}", http.HandlerFunc(handler.Update))
 
 	for _, testCase := range testCases {
 		testCase.Method = "PUT"
@@ -257,10 +258,10 @@ func TestFailUpdate(t *testing.T) {
 
 	testCase := test.TestCase{
 		Name:       "fail",
-		Url:        "/songs",
+		Url:        "/songs/1",
 		Method:     "PUT",
-		Body:       `{"id":1}`,
-		WantStatus: 400,
+		Body:       `{}`,
+		WantStatus: 404,
 		WantRes:    `{"status":"Error","error":"Song not exists"}`,
 	}
 
@@ -268,7 +269,7 @@ func TestFailUpdate(t *testing.T) {
 
 	router := http.NewServeMux()
 
-	router.HandleFunc("PUT /songs", http.HandlerFunc(handler.Update))
+	router.HandleFunc("PUT /songs/{id}", http.HandlerFunc(handler.Update))
 
 	test.TestEndpoint(t, router, testCase)
 }
@@ -328,7 +329,7 @@ func TestFailDelete(t *testing.T) {
 		Url:        "/songs/1",
 		Method:     "DELETE",
 		Body:       `{}`,
-		WantStatus: 400,
+		WantStatus: 404,
 		WantRes:    `{"status":"Error","error":"Song not exists"}`,
 	}
 

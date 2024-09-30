@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	"github.com/s3nn1k/ef-mob-task/internal/client"
 	"github.com/s3nn1k/ef-mob-task/internal/models"
@@ -13,8 +14,8 @@ import (
 type ServiceIface interface {
 	Create(ctx context.Context, song string, group string) (models.Song, error)
 	Update(ctx context.Context, song models.Song) (bool, error)
-	GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error)
-	GetById(ctx context.Context, filters models.SongFilters) (models.Song, error)
+	GetAll(ctx context.Context, filters models.GetFilters) ([]models.Song, error)
+	GetVerses(ctx context.Context, filters models.GetVersesFilters) ([]string, error)
 	Delete(ctx context.Context, id int) (bool, error)
 }
 
@@ -46,26 +47,28 @@ func (s *Service) Create(ctx context.Context, song string, group string) (models
 	return res, nil
 }
 
-func (s *Service) GetById(ctx context.Context, filters models.SongFilters) (models.Song, error) {
+func (s *Service) GetVerses(ctx context.Context, filters models.GetVersesFilters) ([]string, error) {
 	logger.LogUse(ctx).Debug("Service.GetById", "filters", filters.AsLogValue())
 
-	song, err := s.storage.GetById(ctx, filters.Id)
+	songs, err := s.storage.GetAll(ctx, models.GetFilters{Limit: 1, Id: filters.Id})
 	if err != nil {
-		return models.Song{}, err
+		return nil, err
 	}
 
-	if filters.Verse > 0 {
-		logger.LogUse(ctx).Debug("Filter song's text by verse", "input", song.AsLogValue())
-
-		song.Text = song.GetVerse(filters.Verse)
-
-		logger.LogUse(ctx).Debug("Result", "song", song.AsLogValue())
+	if len(songs) < 1 {
+		return nil, nil
 	}
 
-	return song, nil
+	logger.LogUse(ctx).Debug("Filter song's verses", "input", songs[0].Text)
+
+	verses := filterVerses(songs[0].Text, filters.Limit, filters.Offset)
+
+	logger.LogUse(ctx).Debug("Result", "verses", verses)
+
+	return verses, nil
 }
 
-func (s *Service) GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error) {
+func (s *Service) GetAll(ctx context.Context, filters models.GetFilters) ([]models.Song, error) {
 	return s.storage.GetAll(ctx, filters)
 }
 
@@ -75,4 +78,20 @@ func (s *Service) Update(ctx context.Context, song models.Song) (bool, error) {
 
 func (s *Service) Delete(ctx context.Context, id int) (bool, error) {
 	return s.storage.Delete(ctx, id)
+}
+
+func filterVerses(text string, limit int, offset int) []string {
+	verses := strings.Split(text, "\n\n")
+
+	if len(verses) > offset {
+		verses = verses[offset:]
+
+		if len(verses) > limit {
+			verses = verses[:limit]
+		}
+	} else {
+		return []string{}
+	}
+
+	return verses
 }

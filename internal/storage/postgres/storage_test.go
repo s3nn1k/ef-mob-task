@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/pashagolub/pgxmock/v4"
 	"github.com/s3nn1k/ef-mob-task/internal/models"
 )
@@ -124,17 +123,19 @@ func TestGetAll(t *testing.T) {
 		Date:  time.Now().Format("02.01.2006"),
 	}
 
-	filters := models.AllFilters{
+	filters := models.GetFilters{
 		Limit:  1,
 		Offset: 1,
+		Id:     1,
 		Song:   song.Song,
 		Group:  song.Group,
 		Date:   song.Date,
 	}
 
 	mock.ExpectQuery("^SELECT (.+) FROM songs WHERE (.+)$").
-		WithArgs(filters.Song, filters.Group, filters.Date, filters.Limit, filters.Offset).
+		WithArgs(filters.Id, filters.Song, filters.Group, filters.Date, filters.Limit, filters.Offset).
 		WillReturnRows(pgxmock.NewRows([]string{"id", "song", "group", "text", "link", "date"}).
+			AddRow(song.Id, song.Song, song.Group, song.Text, song.Link, song.Date).
 			AddRow(song.Id, song.Song, song.Group, song.Text, song.Link, song.Date))
 
 	db := NewStorage(mock)
@@ -144,92 +145,34 @@ func TestGetAll(t *testing.T) {
 		t.Fatalf("error not expected while get all songs: %s", err)
 	}
 
-	if len(songs) != 1 {
+	if len(songs) != 2 {
 		t.Fatal("error: must get same songs as in storage")
 	}
 
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("there were unfulfilled expectations: %s", err)
-	}
-}
+	for _, storedSong := range songs {
+		if storedSong.Id != song.Id {
+			t.Fatalf("error: returned id must be the same")
+		}
 
-func TestGetById(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatal(err)
-	}
+		if storedSong.Song != song.Song {
+			t.Fatalf("error: returned song must be the same as in storage")
+		}
 
-	song := models.Song{
-		Id:    1,
-		Song:  "TestSong",
-		Group: "TestGroup",
-		Text:  "TestText",
-		Link:  "TestLink",
-		Date:  time.Now().Format("02.01.2006"),
-	}
+		if storedSong.Group != song.Group {
+			t.Fatalf("error: returned group must be the same as in storage")
+		}
 
-	mock.ExpectQuery("^SELECT (.+) FROM songs WHERE (.+)$").
-		WithArgs(song.Id).
-		WillReturnRows(pgxmock.NewRows([]string{"song", "group", "text", "link", "date"}).
-			AddRow(song.Song, song.Group, song.Text, song.Link, song.Date))
+		if storedSong.Text != song.Text {
+			t.Fatalf("error: returned text must be the same as in storage")
+		}
 
-	db := NewStorage(mock)
+		if storedSong.Link != song.Link {
+			t.Fatalf("error: returned link must be the same as in storage")
+		}
 
-	storedSong, err := db.GetById(context.Background(), song.Id)
-	if err != nil {
-		t.Fatalf("error not expected while get song by id: %s", err)
-	}
-
-	if storedSong.Id != song.Id {
-		t.Fatalf("error: returned id must be the same")
-	}
-
-	if storedSong.Song != song.Song {
-		t.Fatalf("error: returned song must be the same as in storage")
-	}
-
-	if storedSong.Group != song.Group {
-		t.Fatalf("error: returned group must be the same as in storage")
-	}
-
-	if storedSong.Text != song.Text {
-		t.Fatalf("error: returned text must be the same as in storage")
-	}
-
-	if storedSong.Link != song.Link {
-		t.Fatalf("error: returned link must be the same as in storage")
-	}
-
-	if storedSong.Date != song.Date {
-		t.Fatalf("error: returned date must be the same as in storage")
-	}
-
-	if err := mock.ExpectationsWereMet(); err != nil {
-		t.Fatalf("there were unfulfilled expectations: %s", err)
-	}
-}
-
-func TestFailGetById(t *testing.T) {
-	mock, err := pgxmock.NewPool()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	id := 1
-
-	mock.ExpectQuery("^SELECT (.+) FROM songs WHERE (.+)$").
-		WithArgs(id).
-		WillReturnError(pgx.ErrNoRows)
-
-	db := NewStorage(mock)
-
-	storedSong, err := db.GetById(context.Background(), id)
-	if err != nil {
-		t.Fatalf("error: if err is pgx.ErrNoRows err must not be returned: %s", err)
-	}
-
-	if storedSong.Id != 0 {
-		t.Fatalf("error: id must be 0 if song not exists in storage")
+		if storedSong.Date != song.Date {
+			t.Fatalf("error: returned date must be the same as in storage")
+		}
 	}
 
 	if err := mock.ExpectationsWereMet(); err != nil {

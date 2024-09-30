@@ -100,16 +100,16 @@ func initRoutes(h *delivery.Handler, log *slog.Logger) *http.ServeMux {
 	router := http.NewServeMux()
 
 	router.Handle("POST /songs", middleware.WithLogging(log, http.HandlerFunc(h.Create)))
-	router.Handle("PUT /songs", middleware.WithLogging(log, http.HandlerFunc(h.Update)))
+	router.Handle("PUT /songs/{id}", middleware.WithLogging(log, http.HandlerFunc(h.Update)))
 	router.Handle("GET /songs", middleware.WithLogging(log, http.HandlerFunc(h.GetAll)))
-	router.Handle("GET /songs/{id}", middleware.WithLogging(log, http.HandlerFunc(h.GetById)))
+	router.Handle("GET /songs/{id}", middleware.WithLogging(log, http.HandlerFunc(h.GetVerses)))
 	router.Handle("DELETE /songs/{id}", middleware.WithLogging(log, http.HandlerFunc(h.Delete)))
 
 	log.Info("Available routes", slog.Group("route",
 		slog.String("Create", "POST /songs"),
-		slog.String("Update", "PUT /songs"),
+		slog.String("Update", "PUT /songs/{id}"),
 		slog.String("GetAll", "GET /songs"),
-		slog.String("GetById", "GET /songs/{id}"),
+		slog.String("GetVerses", "GET /songs/{id}"),
 		slog.String("Delete", "DELETE /songs/{id}")))
 
 	return router

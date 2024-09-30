@@ -20,6 +20,11 @@ func init() {
 	}
 }
 
+// @title Songs Library API
+// @version 1.0
+// @description API for managing a song library
+// @contact.url https://github.com/s3nn1k
+// @BasePath /
 func main() {
 	cfg, err := config.LoadFromEnv()
 	if err != nil {

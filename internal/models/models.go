@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"strings"
 )
 
 // type Song represents song info
@@ -18,55 +17,24 @@ type Song struct {
 }
 
 // type AllFilters represents filters that uses for get library of songs
-type AllFilters struct {
+type GetFilters struct {
 	Limit  int
 	Offset int
+	Id     int
 	Song   string
 	Group  string
 	Date   string
 }
 
-// type SongFilters represents filters that uses for get song with verse
-type SongFilters struct {
-	Id    int
-	Verse int
+// type SongFilters represents filters that uses for get song text with verse
+type GetVersesFilters struct {
+	Id     int
+	Limit  int
+	Offset int
 }
 
-// SetQueryData set's data from request url query to Filters struct
-func (a *AllFilters) SetQueryData(r *http.Request) error {
-	val := r.URL.Query().Get("limit")
-	if val != "" {
-		limit, err := strconv.Atoi(val)
-		if err != nil {
-			return err
-		}
-
-		a.Limit = limit
-	}
-
-	if a.Limit < 1 {
-		a.Limit = 10
-	}
-
-	val = r.URL.Query().Get("offset")
-	if val != "" {
-		offset, err := strconv.Atoi(val)
-		if err != nil {
-			return err
-		}
-
-		a.Offset = offset
-	}
-
-	a.Song = r.URL.Query().Get("song")
-	a.Group = r.URL.Query().Get("group")
-	a.Date = r.URL.Query().Get("date")
-
-	return nil
-}
-
-// SetQueryId set's id from request url query to struct
-func (s *SongFilters) SetQueryId(r *http.Request) error {
+// SetQueryId set's id from request url query to Song struct
+func (s *Song) SetQueryId(r *http.Request) error {
 	val := r.PathValue("id")
 	if val != "" {
 		id, err := strconv.Atoi(val)
@@ -80,51 +48,99 @@ func (s *SongFilters) SetQueryId(r *http.Request) error {
 	return nil
 }
 
-// SetQueryVerse set's verse id from request url query to struct
-func (s *SongFilters) SetQueryVerse(r *http.Request) error {
-	val := r.URL.Query().Get("verse")
+// SetQueryData set's data from request url query to AllFilters struct
+func (g *GetFilters) SetQueryData(r *http.Request) error {
+	val := r.URL.Query().Get("limit")
 	if val != "" {
-		verse, err := strconv.Atoi(val)
+		limit, err := strconv.Atoi(val)
 		if err != nil {
 			return err
 		}
 
-		s.Verse = verse
+		g.Limit = limit
+	}
+
+	if g.Limit < 1 {
+		g.Limit = 10
+	}
+
+	val = r.URL.Query().Get("offset")
+	if val != "" {
+		offset, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+
+		g.Offset = offset
+	}
+
+	if g.Offset < 1 {
+		g.Offset = 0
+	}
+
+	val = r.URL.Query().Get("id")
+	if val != "" {
+		id, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+
+		g.Id = id
+	}
+
+	g.Song = r.URL.Query().Get("song")
+	g.Group = r.URL.Query().Get("group")
+	g.Date = r.URL.Query().Get("date")
+
+	return nil
+}
+
+// SetQueryId set's id from request url query to GetFilters struct
+func (g *GetVersesFilters) SetQueryId(r *http.Request) error {
+	val := r.PathValue("id")
+	if val != "" {
+		id, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
+
+		g.Id = id
 	}
 
 	return nil
 }
 
-// GetVerse returns verse from text
-func (s *Song) GetVerse(id int) string {
-	verses := strings.Split(s.Text, "\n\n")
+// SetQueryVerse set's data from request url query to GetVersesFilters struct
+func (g *GetVersesFilters) SetQueryData(r *http.Request) error {
+	val := r.URL.Query().Get("limit")
+	if val != "" {
+		limit, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
 
-	if len(verses) > id-1 && id >= 1 {
-		return verses[id-1]
+		g.Limit = limit
 	}
 
-	return ""
-}
+	if g.Limit < 1 {
+		g.Limit = 10
+	}
 
-// AsLogValue represents AllFilters struct as slog.Value
-// Used for logging
-func (a *AllFilters) AsLogValue() slog.Value {
-	return slog.GroupValue(
-		slog.Int("limit", a.Limit),
-		slog.Int("offset", a.Offset),
-		slog.String("song", a.Song),
-		slog.String("group", a.Group),
-		slog.String("date", a.Date),
-	)
-}
+	val = r.URL.Query().Get("offset")
+	if val != "" {
+		offset, err := strconv.Atoi(val)
+		if err != nil {
+			return err
+		}
 
-// AsLogValue represents SongFilters struct as slog.Value
-// Used for logging
-func (s *SongFilters) AsLogValue() slog.Value {
-	return slog.GroupValue(
-		slog.Int("id", s.Id),
-		slog.Int("verse", s.Verse),
-	)
+		g.Offset = offset
+	}
+
+	if g.Offset < 1 {
+		g.Offset = 0
+	}
+
+	return nil
 }
 
 // AsLogValue represents Song struct as slog.Value
@@ -137,5 +153,28 @@ func (s *Song) AsLogValue() slog.Value {
 		slog.String("text", s.Text),
 		slog.String("link", s.Link),
 		slog.String("date", s.Date),
+	)
+}
+
+// AsLogValue represents AllFilters struct as slog.Value
+// Used for logging
+func (g *GetFilters) AsLogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Int("limit", g.Limit),
+		slog.Int("offset", g.Offset),
+		slog.Int("id", g.Id),
+		slog.String("song", g.Song),
+		slog.String("group", g.Group),
+		slog.String("date", g.Date),
+	)
+}
+
+// AsLogValue represents SongFilters struct as slog.Value
+// Used for logging
+func (g *GetVersesFilters) AsLogValue() slog.Value {
+	return slog.GroupValue(
+		slog.Int("id", g.Id),
+		slog.Int("limit", g.Limit),
+		slog.Int("offset", g.Offset),
 	)
 }

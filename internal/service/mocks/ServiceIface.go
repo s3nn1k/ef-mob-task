@@ -71,7 +71,7 @@ func (_m *ServiceIface) Delete(ctx context.Context, id int) (bool, error) {
 }
 
 // GetAll provides a mock function with given fields: ctx, filters
-func (_m *ServiceIface) GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error) {
+func (_m *ServiceIface) GetAll(ctx context.Context, filters models.GetFilters) ([]models.Song, error) {
 	ret := _m.Called(ctx, filters)
 
 	if len(ret) == 0 {
@@ -80,10 +80,10 @@ func (_m *ServiceIface) GetAll(ctx context.Context, filters models.AllFilters) (
 
 	var r0 []models.Song
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, models.AllFilters) ([]models.Song, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, models.GetFilters) ([]models.Song, error)); ok {
 		return rf(ctx, filters)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, models.AllFilters) []models.Song); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, models.GetFilters) []models.Song); ok {
 		r0 = rf(ctx, filters)
 	} else {
 		if ret.Get(0) != nil {
@@ -91,7 +91,7 @@ func (_m *ServiceIface) GetAll(ctx context.Context, filters models.AllFilters) (
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, models.AllFilters) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, models.GetFilters) error); ok {
 		r1 = rf(ctx, filters)
 	} else {
 		r1 = ret.Error(1)
@@ -100,26 +100,28 @@ func (_m *ServiceIface) GetAll(ctx context.Context, filters models.AllFilters) (
 	return r0, r1
 }
 
-// GetById provides a mock function with given fields: ctx, filters
-func (_m *ServiceIface) GetById(ctx context.Context, filters models.SongFilters) (models.Song, error) {
+// GetVerses provides a mock function with given fields: ctx, filters
+func (_m *ServiceIface) GetVerses(ctx context.Context, filters models.GetVersesFilters) ([]string, error) {
 	ret := _m.Called(ctx, filters)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetById")
+		panic("no return value specified for GetVerses")
 	}
 
-	var r0 models.Song
+	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, models.SongFilters) (models.Song, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, models.GetVersesFilters) ([]string, error)); ok {
 		return rf(ctx, filters)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, models.SongFilters) models.Song); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, models.GetVersesFilters) []string); ok {
 		r0 = rf(ctx, filters)
 	} else {
-		r0 = ret.Get(0).(models.Song)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, models.SongFilters) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, models.GetVersesFilters) error); ok {
 		r1 = rf(ctx, filters)
 	} else {
 		r1 = ret.Error(1)

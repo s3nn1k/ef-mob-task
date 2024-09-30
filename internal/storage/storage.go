@@ -10,7 +10,6 @@ import (
 type Storage interface {
 	Create(ctx context.Context, song models.Song) (int, error)
 	Update(ctx context.Context, song models.Song) (bool, error)
-	GetById(ctx context.Context, id int) (models.Song, error)
-	GetAll(ctx context.Context, filters models.AllFilters) ([]models.Song, error)
+	GetAll(ctx context.Context, filters models.GetFilters) ([]models.Song, error)
 	Delete(ctx context.Context, id int) (bool, error)
 }

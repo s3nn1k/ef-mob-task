@@ -16,17 +16,30 @@ const (
 
 // type Response represents json body of response
 type Response struct {
-	Status  string        `json:"status"`
-	Message string        `json:"error,omitempty"`
-	Result  []models.Song `json:"result,omitempty"`
+	Status  string `json:"status"`
+	Message string `json:"error,omitempty"`
+	Result  any    `json:"result,omitempty"`
 }
 
 // AsLogValue represents Response struct as slog.Value
 // Used for logging
 func (r *Response) AsLogValue() slog.Value {
 	var logValues []slog.Value
-	for _, song := range r.Result {
-		logValues = append(logValues, song.AsLogValue())
+
+	songs, ok := r.Result.([]models.Song)
+	if !ok {
+		verses, ok := r.Result.([]string)
+		if !ok {
+			logValues = append(logValues, slog.AnyValue(r.Result))
+		} else {
+			for _, verse := range verses {
+				logValues = append(logValues, slog.StringValue(verse))
+			}
+		}
+	} else {
+		for _, song := range songs {
+			logValues = append(logValues, song.AsLogValue())
+		}
 	}
 
 	return slog.GroupValue(
@@ -37,7 +50,7 @@ func (r *Response) AsLogValue() slog.Value {
 }
 
 // Ok is an alias func to create success response
-func Ok(result []models.Song) Response {
+func Ok(result any) Response {
 	return Response{
 		Status: statusOk,
 		Result: result,
