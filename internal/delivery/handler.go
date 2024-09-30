@@ -29,7 +29,7 @@ func NewHandler(l *slog.Logger, s service.ServiceIface) *Handler {
 // @Accept  json
 // @Produce  json
 // @Param song body models.Song true "Song details"
-// @Success 200 {object} Response "Created song"
+// @Success 200 {object} models.Song "Created song"
 // @Failure 400 {object} Response "Invalid input"
 // @Failure 500 {object} Response "Failed to create song"
 // @Router /songs [post]
@@ -109,7 +109,7 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 // @Param song query string false "Song title"
 // @Param group query string false "Group name"
 // @Param date query string false "Song release date in format 02.01.2006"
-// @Success 200 {object} Response "Array of Song's"
+// @Success 200 {array} models.Song "Array of Song's"
 // @Failure 400 {object} Response "Invalid query parameters"
 // @Failure 500 {object} Response "Failed to get Song's"
 // @Router /songs [get]
@@ -142,7 +142,7 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Param id path int true "Song Id"
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
-// @Success 200 {object} Response "Array of verses"
+// @Success 200 {array} string "Array of verses"
 // @Failure 400 {object} Response "Invalid song Id or pagination parameters"
 // @Failure 404 {object} Response "Empty verses response"
 // @Failure 500 {object} Response "Failed to get Song's verses"

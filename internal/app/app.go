@@ -10,6 +10,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/s3nn1k/ef-mob-task/docs"
 	"github.com/s3nn1k/ef-mob-task/internal/client"
 	"github.com/s3nn1k/ef-mob-task/internal/config"
 	"github.com/s3nn1k/ef-mob-task/internal/delivery"
@@ -17,6 +18,7 @@ import (
 	"github.com/s3nn1k/ef-mob-task/internal/service"
 	"github.com/s3nn1k/ef-mob-task/internal/storage/postgres"
 	"github.com/s3nn1k/ef-mob-task/pkg/logger"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type App struct {
@@ -73,9 +75,9 @@ func New(cfg *config.Config) (*App, error) {
 
 	hndlr := delivery.NewHandler(log, srvc)
 
-	r := initRoutes(hndlr, log)
-
 	addr := fmt.Sprintf("%s:%s", cfg.Server.Host, cfg.Server.Port)
+
+	r := initRoutes(hndlr, log)
 
 	app := &App{
 		db: db,
@@ -93,6 +95,8 @@ func New(cfg *config.Config) (*App, error) {
 
 	log.Info("Is test api service in use", slog.Bool("value", cfg.UseTestApi))
 
+	log.Info("Visit " + fmt.Sprintf("http://localhost:%s/swagger/index.html", cfg.Server.Port) + " to test the API")
+
 	return app, nil
 }
 
@@ -105,12 +109,15 @@ func initRoutes(h *delivery.Handler, log *slog.Logger) *http.ServeMux {
 	router.Handle("GET /songs/{id}", middleware.WithLogging(log, http.HandlerFunc(h.GetVerses)))
 	router.Handle("DELETE /songs/{id}", middleware.WithLogging(log, http.HandlerFunc(h.Delete)))
 
+	router.Handle("GET /swagger/", httpSwagger.WrapHandler)
+
 	log.Info("Available routes", slog.Group("route",
 		slog.String("Create", "POST /songs"),
 		slog.String("Update", "PUT /songs/{id}"),
 		slog.String("GetAll", "GET /songs"),
 		slog.String("GetVerses", "GET /songs/{id}"),
-		slog.String("Delete", "DELETE /songs/{id}")))
+		slog.String("Delete", "DELETE /songs/{id}"),
+		slog.String("Swagger", "GET /swagger/")))
 
 	return router
 }

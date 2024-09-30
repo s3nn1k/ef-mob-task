@@ -1,0 +1,329 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API for managing a song library",
+        "title": "Songs Library API",
+        "contact": {
+            "url": "https://github.com/s3nn1k"
+        },
+        "version": "1.0.0"
+    },
+    "basePath": "/",
+    "paths": {
+        "/songs": {
+            "get": {
+                "description": "Returns a list of all songs with optional filtering and pagination",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Get all Song's from the storage",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Song Id",
+                        "name": "id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Song title",
+                        "name": "song",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Group name",
+                        "name": "group",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Song release date in format 02.01.2006",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of Song's",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Song"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid query parameters",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get Song's",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new song with the given details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Create a new song",
+                "parameters": [
+                    {
+                        "description": "Song details",
+                        "name": "song",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Song"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Created song",
+                        "schema": {
+                            "$ref": "#/definitions/models.Song"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to create song",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/songs/{id}": {
+            "get": {
+                "description": "Returns paginated verses for the specified Song",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Get song verses",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Song Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Array of verses",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid song Id or pagination parameters",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Empty verses response",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to get Song's verses",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates a song with the given details",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Update an existing song",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Song Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Updated song details",
+                        "name": "song",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Song"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Song updated successfully",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Song not found",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update song",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes a song with the given Id",
+                "tags": [
+                    "songs"
+                ],
+                "summary": "Delete a song",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Song Id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Song deleted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid song Id",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "404": {
+                        "description": "Song not found",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to delete song",
+                        "schema": {
+                            "$ref": "#/definitions/delivery.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "delivery.Response": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                },
+                "result": {},
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Song": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "link": {
+                    "type": "string"
+                },
+                "releaseDate": {
+                    "type": "string"
+                },
+                "song": {
+                    "type": "string"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

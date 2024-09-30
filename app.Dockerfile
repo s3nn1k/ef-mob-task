@@ -9,9 +9,10 @@ COPY ["go.mod", "go.sum", "./"]
 RUN go mod download
 
 # build
+COPY cmd ./cmd
 COPY internal ./internal
 COPY pkg ./pkg
-COPY cmd ./cmd
+COPY docs ./docs
 RUN go build -o ./bin/app ./cmd/main.go
 
 FROM alpine AS runner

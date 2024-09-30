@@ -1,0 +1,217 @@
+basePath: /
+definitions:
+  delivery.Response:
+    properties:
+      error:
+        type: string
+      result: {}
+      status:
+        type: string
+    type: object
+  models.Song:
+    properties:
+      group:
+        type: string
+      id:
+        type: integer
+      link:
+        type: string
+      releaseDate:
+        type: string
+      song:
+        type: string
+      text:
+        type: string
+    type: object
+info:
+  contact:
+    url: https://github.com/s3nn1k
+  description: API for managing a song library
+  title: Songs Library API
+  version: 1.0.0
+paths:
+  /songs:
+    get:
+      description: Returns a list of all songs with optional filtering and pagination
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: Song Id
+        in: query
+        name: id
+        type: integer
+      - description: Song title
+        in: query
+        name: song
+        type: string
+      - description: Group name
+        in: query
+        name: group
+        type: string
+      - description: Song release date in format 02.01.2006
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Array of Song's
+          schema:
+            items:
+              $ref: '#/definitions/models.Song'
+            type: array
+        "400":
+          description: Invalid query parameters
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "500":
+          description: Failed to get Song's
+          schema:
+            $ref: '#/definitions/delivery.Response'
+      summary: Get all Song's from the storage
+      tags:
+      - songs
+    post:
+      consumes:
+      - application/json
+      description: Creates a new song with the given details
+      parameters:
+      - description: Song details
+        in: body
+        name: song
+        required: true
+        schema:
+          $ref: '#/definitions/models.Song'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Created song
+          schema:
+            $ref: '#/definitions/models.Song'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "500":
+          description: Failed to create song
+          schema:
+            $ref: '#/definitions/delivery.Response'
+      summary: Create a new song
+      tags:
+      - songs
+  /songs/{id}:
+    delete:
+      description: Deletes a song with the given Id
+      parameters:
+      - description: Song Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: Song deleted successfully
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "400":
+          description: Invalid song Id
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "404":
+          description: Song not found
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "500":
+          description: Failed to delete song
+          schema:
+            $ref: '#/definitions/delivery.Response'
+      summary: Delete a song
+      tags:
+      - songs
+    get:
+      description: Returns paginated verses for the specified Song
+      parameters:
+      - description: Song Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Array of verses
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Invalid song Id or pagination parameters
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "404":
+          description: Empty verses response
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "500":
+          description: Failed to get Song's verses
+          schema:
+            $ref: '#/definitions/delivery.Response'
+      summary: Get song verses
+      tags:
+      - songs
+    put:
+      consumes:
+      - application/json
+      description: Updates a song with the given details
+      parameters:
+      - description: Song Id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated song details
+        in: body
+        name: song
+        required: true
+        schema:
+          $ref: '#/definitions/models.Song'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Song updated successfully
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "404":
+          description: Song not found
+          schema:
+            $ref: '#/definitions/delivery.Response'
+        "500":
+          description: Failed to update song
+          schema:
+            $ref: '#/definitions/delivery.Response'
+      summary: Update an existing song
+      tags:
+      - songs
+swagger: "2.0"
