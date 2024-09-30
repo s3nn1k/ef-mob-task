@@ -102,7 +102,6 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 // @Summary Get all Song's from the storage
 // @Description Returns a list of all songs with optional filtering and pagination
 // @Tags songs
-// @Accept  json
 // @Produce  json
 // @Param limit query int false "Limit"
 // @Param offset query int false "Offset"
@@ -135,9 +134,9 @@ func (h *Handler) GetAll(w http.ResponseWriter, r *http.Request) {
 	h.response(w, Ok(songs), http.StatusOK)
 }
 
-// GetVerses returns paginated verses for a song
+// GetVerses returns paginated verses for a Song
 // @Summary Get song verses
-// @Description Returns paginated verses for the specified song
+// @Description Returns paginated verses for the specified Song
 // @Tags songs
 // @Produce  json
 // @Param id path int true "Song Id"
